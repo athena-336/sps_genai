@@ -1,0 +1,17 @@
+[project]
+name = "sps-genai"
+version = "0.1.0"
+description = "FastAPI project with bigram text generation and spaCy word embeddings"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "spacy>=3.7",
+    "en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.1/en_core_web_md-3.7.1-py3-none-any.whl",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "fastapi[standard]>=0.111",
+]
