@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "spacy>=3.7",
+    "numpy>=1.26,<2",
     "torch>=2.2",
     "torchvision>=0.17",
     "pillow>=10.0",
