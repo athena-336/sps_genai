@@ -8,6 +8,10 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "spacy>=3.7",
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "pillow>=10.0",
+    "python-multipart>=0.0.9",
     "en-core-web-md @ https://github.com/explosion/spacy-models/releases/download/en_core_web_md-3.7.1/en_core_web_md-3.7.1-py3-none-any.whl",
 ]
 

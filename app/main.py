@@ -1,10 +1,11 @@
 from typing import Union
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.bigram_model import BigramModel
 from app.embedding import EmbeddingModel
+from app.image_classifier import ImageClassifier
 
 app = FastAPI()
 
@@ -19,6 +20,7 @@ It tells the story of Edmond Dantès, who is falsely imprisoned and later seeks 
 
 bigram_model = BigramModel(corpus)
 embedding_model = EmbeddingModel()
+image_classifier = ImageClassifier()
 
 
 class TextGenerationRequest(BaseModel):
@@ -66,6 +68,25 @@ def get_embedding(word: str, include_similar: bool = False, top_n: int = 5):
         response["most_similar"] = embedding_model.most_similar(word, topn=top_n)
 
     return response
+
+
+@app.post("/classify_image")
+async def classify_image(file: UploadFile = File(...), top_k: int = 3):
+    """Classify an uploaded image into one of the 10 CIFAR10 classes.
+
+    Example: curl -X POST -F "file=@cat.png" http://127.0.0.1:8000/classify_image
+    """
+    if not image_classifier.available:
+        raise HTTPException(
+            status_code=503,
+            detail="Model weights not found. Run `uv run python train_cnn.py` first.",
+        )
+    try:
+        return image_classifier.predict(await file.read(), top_k=top_k)
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Could not read the uploaded file as an image."
+        )
 
 
 @app.post("/embedding")

@@ -6,11 +6,15 @@ A FastAPI project with:
 - **Word embeddings** (`/embedding`) — added for this assignment, using spaCy's
   pretrained `en_core_web_md` static word vectors
 
+- **CNN image classifier** (`/classify_image`) — added for Assignment 2, a
+  PyTorch CNN trained on CIFAR10 (images resized to 64x64)
+
 ## Setup
 
 ```bash
 uv sync
 uv run python -m spacy download en_core_web_md
+uv run python train_cnn.py        # trains the CNN, saves app/cnn_cifar10.pt
 uv run fastapi dev app/main.py
 ```
 
@@ -65,6 +69,36 @@ hashing, so `most_similar` results can be noisier than with `en_core_web_lg`,
 which has a full unique vector table. Swap the model name in
 `app/embedding.py` for `en_core_web_lg` for higher-quality nearest-neighbor
 results, at the cost of a larger download.
+
+### `POST /classify_image`
+
+Upload an image (multipart form field `file`) and get the predicted CIFAR10
+class. Optional query parameter `top_k` (default 3).
+
+```bash
+curl -X POST -F "file=@cat.png" http://127.0.0.1:8000/classify_image
+```
+
+Response:
+
+```json
+{
+  "class": "cat",
+  "confidence": 0.71,
+  "top_predictions": [
+    {"class": "cat", "confidence": 0.71},
+    {"class": "dog", "confidence": 0.18},
+    {"class": "deer", "confidence": 0.04}
+  ]
+}
+```
+
+Returns `400` if the file is not a readable image, and `503` if the trained
+weights (`app/cnn_cifar10.pt`) have not been created yet.
+
+**CNN architecture** (`app/cnn_model.py`): input 3x64x64 → Conv(16, 3x3, s1, p1)
+→ ReLU → MaxPool(2, s2) → Conv(32, 3x3, s1, p1) → ReLU → MaxPool(2, s2) →
+Flatten (8192) → Linear(100) → ReLU → Linear(10).
 
 ## Docker
 
