@@ -8,6 +8,9 @@ A FastAPI project with:
 
 - **CNN image classifier** (`/classify_image`) — added for Assignment 2, a
   PyTorch CNN trained on CIFAR10 (images resized to 64x64)
+- **Diffusion image generator** (`/generate_diffusion`) and **energy-based image
+  generator** (`/generate_ebm`) — added for Assignment 4, both trained on MNIST
+  digits (32x32)
 
 ## Setup
 
@@ -15,6 +18,8 @@ A FastAPI project with:
 uv sync
 uv run python -m spacy download en_core_web_md
 uv run python train_cnn.py        # trains the CNN, saves app/cnn_cifar10.pt
+uv run python train_diffusion.py  # saves app/diffusion_mnist.pt  (~10 epochs)
+uv run python train_ebm.py        # saves app/ebm_mnist.pt         (10 epochs, slower)
 uv run fastapi dev app/main.py
 ```
 
@@ -99,6 +104,36 @@ weights (`app/cnn_cifar10.pt`) have not been created yet.
 **CNN architecture** (`app/cnn_model.py`): input 3x64x64 → Conv(16, 3x3, s1, p1)
 → ReLU → MaxPool(2, s2) → Conv(32, 3x3, s1, p1) → ReLU → MaxPool(2, s2) →
 Flatten (8192) → Linear(100) → ReLU → Linear(10).
+
+### `POST /generate_diffusion?num_images=4&seed=0`
+
+Returns a PNG grid of generated digits. `num_images` is 1 to 16; `seed` is
+optional and makes the result reproducible.
+
+```bash
+curl -X POST "http://127.0.0.1:8000/generate_diffusion?num_images=8" -o diffusion.png
+```
+
+The model is a small U-Net trained to predict the noise added to an image
+(`app/diffusion_model.py`). Sampling starts from pure Gaussian noise and removes
+it step by step (200 steps, cosine schedule).
+
+### `POST /generate_ebm?num_images=4&steps=256&seed=0`
+
+Returns a PNG grid of generated digits. `steps` (1 to 1000) is the number of
+Langevin updates.
+
+```bash
+curl -X POST "http://127.0.0.1:8000/generate_ebm?num_images=8" -o ebm.png
+```
+
+The model is a small CNN that outputs one scalar *energy* per image
+(`app/ebm_model.py`); low energy means "looks like a real digit". It is trained
+with contrastive divergence and a replay buffer. To sample, the image itself is
+updated by gradient descent on the energy (`x <- x - step * dE/dx + noise`)
+while the network weights stay frozen.
+
+Both endpoints return `503` if their weights file is missing.
 
 ## Docker
 

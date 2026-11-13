@@ -1,11 +1,12 @@
-from typing import Union
+from typing import Optional, Union
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Response, UploadFile
 from pydantic import BaseModel
 
 from app.bigram_model import BigramModel
 from app.embedding import EmbeddingModel
 from app.image_classifier import ImageClassifier
+from app.image_generators import DiffusionGenerator, EBMGenerator
 
 app = FastAPI()
 
@@ -21,6 +22,10 @@ It tells the story of Edmond Dantès, who is falsely imprisoned and later seeks 
 bigram_model = BigramModel(corpus)
 embedding_model = EmbeddingModel()
 image_classifier = ImageClassifier()
+diffusion_generator = DiffusionGenerator()
+ebm_generator = EBMGenerator()
+
+PNG_RESPONSE = {200: {"content": {"image/png": {}}, "description": "A PNG grid of generated digits."}}
 
 
 class TextGenerationRequest(BaseModel):
@@ -87,6 +92,45 @@ async def classify_image(file: UploadFile = File(...), top_k: int = 3):
         raise HTTPException(
             status_code=400, detail="Could not read the uploaded file as an image."
         )
+
+
+@app.post("/generate_diffusion", response_class=Response, responses=PNG_RESPONSE)
+def generate_diffusion(
+    num_images: int = Query(4, ge=1, le=16),
+    seed: Optional[int] = None,
+):
+    """Generate handwritten digits with the diffusion model (returns a PNG grid).
+
+    Example: curl -X POST "http://127.0.0.1:8000/generate_diffusion?num_images=8" -o out.png
+    """
+    if not diffusion_generator.available:
+        raise HTTPException(
+            status_code=503,
+            detail="Model weights not found. Run `uv run python train_diffusion.py` first.",
+        )
+    png = diffusion_generator.generate(num_images=num_images, seed=seed)
+    return Response(content=png, media_type="image/png")
+
+
+@app.post("/generate_ebm", response_class=Response, responses=PNG_RESPONSE)
+def generate_ebm(
+    num_images: int = Query(4, ge=1, le=16),
+    steps: int = Query(256, ge=1, le=1000),
+    seed: Optional[int] = None,
+):
+    """Generate handwritten digits with the energy-based model (returns a PNG grid).
+
+    Starts from random noise and runs `steps` Langevin updates to lower the energy.
+
+    Example: curl -X POST "http://127.0.0.1:8000/generate_ebm?num_images=8" -o out.png
+    """
+    if not ebm_generator.available:
+        raise HTTPException(
+            status_code=503,
+            detail="Model weights not found. Run `uv run python train_ebm.py` first.",
+        )
+    png = ebm_generator.generate(num_images=num_images, steps=steps, seed=seed)
+    return Response(content=png, media_type="image/png")
 
 
 @app.post("/embedding")
