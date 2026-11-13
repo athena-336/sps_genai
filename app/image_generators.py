@@ -1,4 +1,6 @@
-"""Diffusion and energy-based image generators used by the API (Assignment 4, Part 1)."""
+"""Diffusion and energy-based image generators used by the API (Assignment 4, Part 1).
+
+Both models are trained on CIFAR-10 (3x32x32 colour images scaled to [-1, 1])."""
 import io
 import threading
 from pathlib import Path
@@ -13,21 +15,23 @@ from app.diffusion_model import Diffusion, UNet
 from app.ebm_model import EnergyCNN, langevin_sample
 
 IMAGE_SIZE = 32
-SHAPE = (1, IMAGE_SIZE, IMAGE_SIZE)
+SHAPE = (3, IMAGE_SIZE, IMAGE_SIZE)
 DIFFUSION_STEPS = 200
 
-DIFFUSION_WEIGHTS = Path(__file__).parent / "diffusion_mnist.pt"
-EBM_WEIGHTS = Path(__file__).parent / "ebm_mnist.pt"
+DIFFUSION_WEIGHTS = Path(__file__).parent / "diffusion_cifar10.pt"
+EBM_WEIGHTS = Path(__file__).parent / "ebm_cifar10.pt"
 
 # Training-time preprocessing (shared by train_diffusion.py and train_ebm.py):
-# MNIST digits resized to 32x32 and scaled from [0, 1] to [-1, 1].
+# CIFAR-10 images (already 32x32) scaled from [0, 1] to [-1, 1].
 TRANSFORM = transforms.Compose(
     [
         transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,)),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ]
 )
+# Random horizontal flips give the models twice as many distinct training images.
+TRAIN_TRANSFORM = transforms.Compose([transforms.RandomHorizontalFlip(), TRANSFORM])
 
 
 def to_png_bytes(images: torch.Tensor, scale: int = 4) -> bytes:

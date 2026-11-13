@@ -1,17 +1,17 @@
-"""Train the energy-based model on MNIST (32x32) with contrastive divergence.
+"""Train the energy-based model on CIFAR-10 (32x32 colour) with contrastive divergence.
 
-    uv run python train_ebm.py                # 10 epochs
-    uv run python train_ebm.py --epochs 3     # quicker, rougher digits
+    uv run python train_ebm.py --epochs 1     # first check how long one epoch takes
+    uv run python train_ebm.py                # 5 epochs
 
-EBMs train slowly (every step runs a Langevin chain), so use more epochs if the
-samples in samples/ebm_samples.png still look like noise.
+EBMs train slowly (every step runs a Langevin chain), so use more epochs, or
+fewer --langevin-steps to go faster, depending on samples/ebm_samples.png.
 
 Each training step:
   1. take "fake" images from a replay buffer and lower their energy with
      Langevin dynamics (gradient descent on the *image*, weights frozen),
   2. update the *weights* so real images get low energy and fake ones high energy.
 
-Writes app/ebm_mnist.pt (used by /generate_ebm) and samples/ebm_samples.png.
+Writes app/ebm_cifar10.pt (used by /generate_ebm) and samples/ebm_samples.png.
 """
 import argparse
 from pathlib import Path
@@ -21,7 +21,7 @@ import torchvision
 from torch.utils.data import DataLoader
 
 from app.ebm_model import EnergyCNN, ReplayBuffer, langevin_sample
-from app.image_generators import EBM_WEIGHTS, SHAPE, TRANSFORM, to_png_bytes
+from app.image_generators import EBM_WEIGHTS, SHAPE, TRAIN_TRANSFORM, to_png_bytes
 
 SAMPLES_PATH = Path("samples/ebm_samples.png")
 
@@ -86,14 +86,14 @@ def train(loader, epochs, device, langevin_steps=60, weights_path=EBM_WEIGHTS,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--langevin-steps", type=int, default=60)
     args = parser.parse_args()
 
     device = pick_device()
     print(f"device: {device}")
-    dataset = torchvision.datasets.MNIST(root="./data", train=True, download=True, transform=TRANSFORM)
+    dataset = torchvision.datasets.CIFAR10(root="./data", train=True, download=True, transform=TRAIN_TRANSFORM)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
     train(loader, args.epochs, device, langevin_steps=args.langevin_steps)
 

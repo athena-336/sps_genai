@@ -22,18 +22,18 @@ class Swish(nn.Module):
 
 
 class EnergyCNN(nn.Module):
-    """1x32x32 image -> one scalar energy per image."""
+    """3x32x32 image -> one scalar energy per image."""
 
-    def __init__(self, in_channels: int = 1):
+    def __init__(self, in_channels: int = 3):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv2d(in_channels, 16, 5, stride=2, padding=4), Swish(),  # 18x18
-            nn.Conv2d(16, 32, 3, stride=2, padding=1), Swish(),           # 9x9
-            nn.Conv2d(32, 64, 3, stride=2, padding=1), Swish(),           # 5x5
-            nn.Conv2d(64, 64, 3, stride=2, padding=1), Swish(),           # 3x3
+            nn.Conv2d(in_channels, 32, 5, stride=2, padding=4), Swish(),  # 18x18
+            nn.Conv2d(32, 64, 3, stride=2, padding=1), Swish(),           # 9x9
+            nn.Conv2d(64, 128, 3, stride=2, padding=1), Swish(),          # 5x5
+            nn.Conv2d(128, 128, 3, stride=2, padding=1), Swish(),         # 3x3
             nn.Flatten(),
-            nn.Linear(64 * 3 * 3, 64), Swish(),
-            nn.Linear(64, 1),
+            nn.Linear(128 * 3 * 3, 128), Swish(),
+            nn.Linear(128, 1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -82,7 +82,7 @@ def langevin_sample(
 class ReplayBuffer:
     """Keeps past samples so Langevin chains do not have to restart from noise each step."""
 
-    def __init__(self, shape=(1, 32, 32), max_size: int = 8192, fresh_prob: float = 0.05,
+    def __init__(self, shape=(3, 32, 32), max_size: int = 8192, fresh_prob: float = 0.05,
                  init_size: int = 128):
         self.shape = tuple(shape)
         self.max_size = max_size

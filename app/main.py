@@ -25,7 +25,7 @@ image_classifier = ImageClassifier()
 diffusion_generator = DiffusionGenerator()
 ebm_generator = EBMGenerator()
 
-PNG_RESPONSE = {200: {"content": {"image/png": {}}, "description": "A PNG grid of generated digits."}}
+PNG_RESPONSE = {200: {"content": {"image/png": {}}, "description": "A PNG grid of generated images."}}
 
 
 class TextGenerationRequest(BaseModel):
@@ -99,7 +99,7 @@ def generate_diffusion(
     num_images: int = Query(4, ge=1, le=16),
     seed: Optional[int] = None,
 ):
-    """Generate handwritten digits with the diffusion model (returns a PNG grid).
+    """Generate CIFAR-10-style images with the diffusion model (returns a PNG grid).
 
     Example: curl -X POST "http://127.0.0.1:8000/generate_diffusion?num_images=8" -o out.png
     """
@@ -118,7 +118,7 @@ def generate_ebm(
     steps: int = Query(256, ge=1, le=1000),
     seed: Optional[int] = None,
 ):
-    """Generate handwritten digits with the energy-based model (returns a PNG grid).
+    """Generate CIFAR-10-style images with the energy-based model (returns a PNG grid).
 
     Starts from random noise and runs `steps` Langevin updates to lower the energy.
 

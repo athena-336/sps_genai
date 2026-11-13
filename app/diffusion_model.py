@@ -6,7 +6,7 @@ Two pieces:
 * ``Diffusion`` - the forward (noising) process, the training loss and the
                   reverse (denoising) sampling loop.
 
-Images are 1x32x32 and scaled to [-1, 1].
+Images are 3x32x32 (CIFAR-10) and scaled to [-1, 1].
 """
 import math
 
@@ -55,7 +55,7 @@ class ResBlock(nn.Module):
 class UNet(nn.Module):
     """Predicts the noise that was added to x_t.  32x32 -> 16x16 -> 8x8 -> back up."""
 
-    def __init__(self, in_channels: int = 1, base: int = 32, t_dim: int = 128):
+    def __init__(self, in_channels: int = 3, base: int = 64, t_dim: int = 256):
         super().__init__()
         self.time_embed = TimeEmbedding(t_dim)
         self.inc = nn.Conv2d(in_channels, base, 3, padding=1)

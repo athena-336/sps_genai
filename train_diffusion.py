@@ -1,10 +1,10 @@
-"""Train the diffusion model on MNIST (32x32) and save the weights.
+"""Train the diffusion model on CIFAR-10 (32x32 colour) and save the weights.
 
-    uv run python train_diffusion.py                # ~10 epochs
-    uv run python train_diffusion.py --epochs 3     # quicker, blurrier digits
+    uv run python train_diffusion.py                # 20 epochs
+    uv run python train_diffusion.py --epochs 3     # quicker, blurrier images
 
-Writes app/diffusion_mnist.pt (used by /generate_diffusion) and
-samples/diffusion_samples.png (a grid of generated digits).
+Writes app/diffusion_cifar10.pt (used by /generate_diffusion) and
+samples/diffusion_samples.png (a grid of generated images).
 """
 import argparse
 import copy
@@ -19,7 +19,7 @@ from app.image_generators import (
     DIFFUSION_STEPS,
     DIFFUSION_WEIGHTS,
     SHAPE,
-    TRANSFORM,
+    TRAIN_TRANSFORM,
     to_png_bytes,
 )
 
@@ -72,13 +72,13 @@ def train(loader, epochs, device, weights_path=DIFFUSION_WEIGHTS, samples_path=S
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=128)
     args = parser.parse_args()
 
     device = pick_device()
     print(f"device: {device}")
-    dataset = torchvision.datasets.MNIST(root="./data", train=True, download=True, transform=TRANSFORM)
+    dataset = torchvision.datasets.CIFAR10(root="./data", train=True, download=True, transform=TRAIN_TRANSFORM)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
     train(loader, args.epochs, device)
 
